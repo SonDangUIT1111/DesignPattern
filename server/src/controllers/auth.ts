@@ -7,6 +7,8 @@ import otpGenerator from "otp-generator";
 var https = require("follow-redirects").https;
 var fs = require("fs");
 import env from "../utils/validateEnv";
+import { AuthProviderFactory, AuthProviderType } from '../factories/AuthProviderFactory';
+import { LoginCredentials, RegisterData } from '../interfaces/IAuthProvider';
 
 export const getUsers = () => UserModel.find();
 export const getUserByPhone = (phone: string) => UserModel.findOne({ phone });
@@ -139,48 +141,24 @@ export const postLogin: RequestHandler = async (req, res) => {
   }
 };
 
-export const register: RequestHandler = async (req, res) => {
-  try {
-    const { phone, password } = req.body;
+export const register: RequestHandler = async (req, res, next) => {
+    try {
+        const { provider = 'phone' } = req.query;
+        const userData: RegisterData = req.body;
 
-    if (!phone || !password) {
-      return res.sendStatus(400);
+        const authProvider = AuthProviderFactory.getProvider(provider as AuthProviderType);
+        const user = await authProvider.register(userData);
+        
+        // Generate JWT token
+        const token = await authProvider.generateToken(user.id!);
+
+        res.status(200).json({
+            user,
+            token
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
     }
-    const existingUser = await getUserByPhone(phone);
-    if (existingUser) {
-      return res.sendStatus(400);
-    }
-
-    const salt = random();
-    const randomName = random();
-    const user = await createUser({
-      phone,
-      authentication: {
-        salt,
-        password: authentication(salt, password),
-      },
-      bookmarkList: {},
-      histories: {},
-      paymentHistories: {},
-      avatar:
-        "https://i.pinimg.com/736x/dc/9c/61/dc9c614e3007080a5aff36aebb949474.jpg",
-      username: "user" + randomName,
-      coinPoint: 0,
-      challenges: [],
-      questLog: {
-        readingTime: 0,
-        watchingTime: 0,
-        received: [],
-        finalTime: new Date(),
-        hasReceivedDailyGift: false,
-      },
-    });
-
-    return res.status(200).json(user).end();
-  } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
-  }
 };
 
 export const checkExistingAccount: RequestHandler = async (req, res) => {
@@ -321,4 +299,45 @@ const sendSMS = (phone: string, otp: string) => {
   req.write(postData);
 
   req.end();
+};
+
+export const login: RequestHandler = async (req, res, next) => {
+    try {
+        const { provider = 'phone' } = req.query;
+        const credentials: LoginCredentials = req.body;
+
+        const authProvider = AuthProviderFactory.getProvider(provider as AuthProviderType);
+        const user = await authProvider.login(credentials);
+        
+        // Generate JWT token
+        const token = await authProvider.generateToken(user.id!);
+
+        res.status(200).json({
+            user,
+            token
+        });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const verifyToken: RequestHandler = async (req, res, next) => {
+    try {
+        const { token, provider = 'phone' } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Token is required' });
+        }
+
+        const authProvider = AuthProviderFactory.getProvider(provider as AuthProviderType);
+        const userId = await authProvider.validateToken(token);
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Invalid token' });
+        }
+
+        res.status(200).json({ valid: true, userId });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
 };

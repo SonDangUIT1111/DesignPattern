@@ -1,4 +1,5 @@
-import { RequestHandler } from "express";
+import { Request } from "express";
+import type { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
 import ComicsModel from "../models/comics";
@@ -9,6 +10,15 @@ import UserModel from "../models/user";
 import * as admin from "firebase-admin";
 import ComicAlbumModel from "../models/comicAlbum";
 import qs from "qs";
+import { StorageProviderFactory } from '../factories/StorageProviderFactory';
+
+interface FileRequest extends Request {
+    body: {
+        file: string; // base64 string
+        filename: string;
+        contentType: string;
+    }
+}
 
 // api get
 export const getComicBanner: RequestHandler = async (req, res, next) => {
@@ -540,15 +550,46 @@ export const testComment: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const sendPushNoti: RequestHandler = async (req, res, next) => {
-  try {
+interface NotificationObserver {
+  update(message: any): Promise<void>;
+}
+
+class NotificationSubject {
+  private observers: NotificationObserver[] = [];
+
+  subscribe(observer: NotificationObserver) {
+    this.observers.push(observer);
+  }
+
+  unsubscribe(observer: NotificationObserver) {
+    this.observers = this.observers.filter((obs) => obs !== observer);
+  }
+
+  async notify(message: any) {
+    for (const observer of this.observers) {
+      await observer.update(message);
+    }
+  }
+}
+
+class FirebaseNotificationObserver implements NotificationObserver {
+  async update(message: any): Promise<void> {
     try {
       var serviceAccount = require("../../pushnotiflutter-95328-firebase-adminsdk-rdiar-9008d7c00f.json");
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch {}
+      if (!admin.apps.length) {
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+      }
+      await admin.messaging().send(message);
+    } catch (error) {
+      console.error("Firebase notification error:", error);
+    }
+  }
+}
 
+export const sendPushNoti: RequestHandler = async (req, res, next) => {
+  try {
     const token =
       "fYxl0HrhQGWk50NtCOKqq6:APA91bHMWUF391_XNFlIlBQcCzPK-1qwofwwZAj0pfE072_3q5ZhbzGOIgmV8i-nk-lOrLHoYPVo6rL7MjFXn0XttdBFwn5-rh3Wad8dfy7xFXfcN5MNRdmaUb0PpOJakDZvqLvdXGAt";
 
@@ -557,23 +598,12 @@ export const sendPushNoti: RequestHandler = async (req, res, next) => {
         title: req.body.title,
         body: req.body.body,
       },
-      token: token, // This is the device token
+      token: token,
     };
-
-    // Send a message to the device corresponding to the provided
-    // registration token.
-    admin
-      .messaging()
-      .send(message)
-      .then((response) => {
-        // Response is a message ID string.
-        console.log("Successfully sent message:", response);
-        res.send("Successfully sent message: " + response);
-      })
-      .catch((error) => {
-        console.log("Error sending message:", error);
-        res.send("Error sending message: " + error);
-      });
+    const subject = new NotificationSubject();
+    subject.subscribe(new FirebaseNotificationObserver());
+    await subject.notify(message);
+    res.send("Successfully sent message");
   } catch (error) {
     next(error);
   }
@@ -1008,4 +1038,53 @@ export const searchComicByGenres: RequestHandler = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+// Helper function to get storage provider
+const getStorageProvider = () => {
+    return StorageProviderFactory.getProvider();
+};
+
+// Example of using storage in a controller method
+export const uploadComicImage: RequestHandler = async (req: FileRequest, res, next) => {
+    try {
+        const { file, filename, contentType } = req.body;
+        if (!file) {
+            throw createHttpError(400, "No file uploaded");
+        }
+
+        // Convert base64 to buffer
+        const buffer = Buffer.from(file.split(',')[1], 'base64');
+
+        const storage = getStorageProvider();
+        const result = await storage.uploadFile(buffer, {
+            path: 'comics',
+            filename: filename || `${Date.now()}-upload.${contentType.split('/')[1]}`,
+            contentType
+        });
+
+        res.status(200).json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const deleteComicImage: RequestHandler = async (req, res, next) => {
+    try {
+        const { path } = req.body;
+        if (!path) {
+            throw createHttpError(400, "File path is required");
+        }
+
+        const storage = getStorageProvider();
+        const success = await storage.deleteFile(path);
+
+        if (!success) {
+            throw createHttpError(404, "File not found or could not be deleted");
+        }
+
+        res.status(200).json({ message: "File deleted successfully" });
+    } catch (error) {
+        next(error);
+    }
 };
