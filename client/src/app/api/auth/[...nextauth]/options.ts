@@ -1,5 +1,7 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from 'next-auth/providers/credentials';
+import FacebookProvider from 'next-auth/providers/facebook';
+import GoogleProvider from 'next-auth/providers/google';
 import prisma from "@/lib/prisma";
 import jwt from 'jsonwebtoken';
 import { hashPassword } from "@/lib/auth";
@@ -55,6 +57,14 @@ const options: AuthOptions = {
         };
       },
     }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID!,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
 
   callbacks: {
@@ -64,7 +74,7 @@ const options: AuthOptions = {
       if (!params?.user?.id || parseInt(params?.user?.id) === -1) {
         const payload = jwt.sign(
           { email: params?.user?.email, name: params?.user?.name },
-          process.env.NEXT_PUBLIC_JWT_SECRET,
+          process.env.NEXT_PUBLIC_JWT_SECRET || 'fallback-secret',
           { expiresIn: '1h' }
         );
         return `/auth/register/?payload=${payload}`;
