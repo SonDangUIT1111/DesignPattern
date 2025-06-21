@@ -15,12 +15,15 @@ export class CommentValidationChain {
     const spamDetector = new SpamDetectionHandler();
     const commentSaver = new CommentSaveHandler();
 
-    // Build the chain
-    this.chain = contentValidator
+    // Build the chain properly - set the first handler as chain head
+    contentValidator
       .setNext(userValidator)
       .setNext(chapterValidator)
       .setNext(spamDetector)
       .setNext(commentSaver);
+      
+    // The chain should start with the first handler
+    this.chain = contentValidator;
   }
 
   public async validateAndSaveComment(request: CommentRequest): Promise<CommentValidationResult> {

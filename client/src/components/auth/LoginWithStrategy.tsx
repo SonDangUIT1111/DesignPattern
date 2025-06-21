@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,12 +22,18 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
     phone: "",
     password: "",
   });
+  const [isClient, setIsClient] = useState(false);
 
   const {
     isLoading,
     authenticate,
     isProviderAvailable,
   } = useAuthStrategy();
+
+  // Ensure we only render provider-dependent UI on client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -160,35 +166,48 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
         </form>
 
         {/* Social Login Buttons */}
-        <div className="space-y-3">
-          <div className="flex items-center">
-            <div className="flex-1 border-t border-zinc-600"></div>
-            <span className="px-4 text-zinc-400 text-sm">Hoặc đăng nhập bằng</span>
-            <div className="flex-1 border-t border-zinc-600"></div>
-          </div>
+        {isClient && (
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <div className="flex-1 border-t border-zinc-600"></div>
+              <span className="px-4 text-zinc-400 text-sm">Hoặc đăng nhập bằng</span>
+              <div className="flex-1 border-t border-zinc-600"></div>
+            </div>
 
-          <div className="flex gap-3">
-            {/* Facebook Login */}
-            <Button
-              onClick={handleFacebookLogin}
-              disabled={isLoading || !isProviderAvailable("facebook")}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaFacebook size={20} />
-              Facebook
-            </Button>
+            <div className="flex gap-3">
+              {/* Facebook Login */}
+              {isProviderAvailable("facebook") && (
+                <Button
+                  onClick={handleFacebookLogin}
+                  disabled={isLoading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaFacebook size={20} />
+                  Facebook
+                </Button>
+              )}
 
-            {/* Google Login */}
-            <Button
-              onClick={handleGoogleLogin}
-              disabled={isLoading || !isProviderAvailable("google")}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FaGoogle size={20} />
-              Google
-            </Button>
+              {/* Google Login */}
+              {isProviderAvailable("google") && (
+                <Button
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FaGoogle size={20} />
+                  Google
+                </Button>
+              )}
+              
+              {/* Show message if no social providers available */}
+              {!isProviderAvailable("facebook") && !isProviderAvailable("google") && (
+                <div className="w-full text-center text-zinc-500 text-sm py-4">
+                  Chức năng đăng nhập mạng xã hội tạm thời không khả dụng
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="text-center">
           <Link

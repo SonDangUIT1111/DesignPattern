@@ -11,7 +11,8 @@ export class GoogleAuthStrategy implements AuthStrategy {
   }
 
   isAvailable(): boolean {
-    return typeof window !== 'undefined' && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID !== undefined;
+    // Remove window check to avoid hydration issues
+    return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID !== undefined;
   }
 
   async authenticate(credentials?: GoogleCredentials): Promise<AuthResult> {
