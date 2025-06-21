@@ -34,6 +34,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@nextui-org/react";
+import { ComicChapterItem } from "./state/ComicChapterItem";
 
 export function convertUtcToGmtPlus7(utcString) {
   const utcDate = new Date(utcString);
@@ -91,11 +92,23 @@ const ComicInfo = ({ id, session }) => {
     fetchUserBoughtDetail();
   }, []);
 
-  const processBuyChapter = async () => {
+  const processBuyChapter = async ({
+    chapterId,
+    unlockPrice,
+    chapterName,
+    coverImage,
+  }) => {
+    onOpen();
     setProcessPayment(true);
     try {
-      await paySkycoin(userId, boughtInfo?.unlockPrice, boughtInfo?.chapterId);
-      setBoughtChapterList([...boughtChapterList, boughtInfo?.chapterId]);
+      await paySkycoin(userId, unlockPrice, chapterId);
+      setBoughtChapterList([...boughtChapterList, chapterId]);
+      setBoughtInfo({
+        chapterId,
+        unlockPrice,
+        chapterName,
+        coverImage,
+      });
     } catch (error) {
       setErrorMessage(
         "Giao dịch thất bại, vui lòng kiểm tra lại số dư và thử lại"
@@ -260,166 +273,20 @@ const ComicInfo = ({ id, session }) => {
                   {index !== 0 && (
                     <Divider className="my-2 h-[0.8px] bg-[#353434] rounded-full mb-5" />
                   )}
-                  <div
-                    className="flex items-center justify-between rounded-lg bg-transparent"
-                    // Increased padding
-                  >
-                    <div className="flex items-center gap-6">
-                      {/* Increased gap */}
-                      <Image
-                        src={chapter.coverImage}
-                        alt={`Chapter ${index + 1} Cover`}
-                        width={120}
-                        height={120}
-                        // Increased dimensions
-                        className="rounded-lg"
-                        // Larger border-radius
-                      />
-                      <div className="flex flex-col gap-3">
-                        <span className="block text-lg font-semibold">
-                          {chapter.chapterName}
-                        </span>
-                        {/* Increased font size */}
-                        <span className="block text-base text-[#8E8E8E]">
-                          {convertUtcToGmtPlus7(chapter.publicTime)}
-                        </span>
-                        {/* Slightly increased font size */}
-                      </div>
-                    </div>
-
-                    {/* Slightly larger font size */}
-                    {chapter?.unlockPrice !== 0 &&
-                    !boughtChapterList.includes(chapter?._id) ? (
-                      <Sheet key={"bottom"}>
-                        <SheetTrigger asChild>
-                          <Button
-                            className={`text-[#DA5EF0] text-lg w-[100px] bg-[#1b1b1b]
-                      }`}
-                          >
-                            {chapter?.unlockPrice}
-                            <img
-                              src="/skycoin.png"
-                              width={20}
-                              height={20}
-                              className="ml-2"
-                            />
-                          </Button>
-                        </SheetTrigger>
-                        <SheetContent side={"bottom"} className="bg-[#2b2b2b]">
-                          <SheetHeader>
-                            <SheetTitle className="text-white px-8">
-                              Mở khóa truyện để tiếp tục đọc nhé!
-                            </SheetTitle>
-                          </SheetHeader>
-                          <div className="flex flex-col gap-4">
-                            <div className=" px-8 flex flex-row justify-between items-center">
-                              <div className="flex flex-row gap-3 mt-3 items-center">
-                                <Image
-                                  src={chapter.coverImage}
-                                  alt="Comic Cover"
-                                  width={120}
-                                  height={120}
-                                  className="rounded-lg"
-                                />
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[#DA5EF0] font-semibold text-xl">
-                                    {data[0].comicName}
-                                  </span>
-                                  <span className="text-lg text-slate-400">
-                                    {chapter.chapterName}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex flex-row gap-2 text-white font-semibold text-xl">
-                                {chapter?.unlockPrice}
-                                <img
-                                  src="/skycoin.png"
-                                  width={30}
-                                  height={30}
-                                />
-                              </div>
-                            </div>
-                            <Divider className="h-[0.8px] bg-[#686868] rounded-full" />
-                            <div className=" px-8 flex flex-row justify-between items-center">
-                              <div className="flex flex-row gap-2">
-                                <IoWalletOutline className="text-[#DA5EF0] w-6 h-6" />
-                                <span className="text-lg text-white">
-                                  Bạn hiện đang có:
-                                </span>
-                              </div>
-                              <div className="flex flex-row gap-2 text-white font-semibold text-xl">
-                                {(userInfo?.coinPoint || "0")?.toLocaleString(
-                                  "de-DE"
-                                )}
-                                <img
-                                  src="/skycoin.png"
-                                  width={30}
-                                  height={30}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <SheetFooter>
-                            <SheetClose asChild>
-                              {userId ? (
-                                <div className="flex flex-row gap-3 w-full mt-4 px-8">
-                                  <Button
-                                    className="basis-1/2 bg-transparent border-solid border-2 border-[#DA5EF0] text-[#DA5EF0] hover:bg-[#DA5EF0] hover:text-white"
-                                    onClick={() => {
-                                      router.push(
-                                        "https://anime-entertainment-payment.vercel.app/"
-                                      );
-                                    }}
-                                  >
-                                    Nạp thêm
-                                  </Button>
-                                  <Button
-                                    className="basis-1/2 bg-gradient-to-r from-[#A958FE] to-[#DA5EF0] transition ease-in-out duration-300 hover:scale-[1.01]"
-                                    onClick={() => {
-                                      setBoughtInfo({
-                                        chapterId: chapter?._id,
-                                        unlockPrice: chapter?.unlockPrice,
-                                        chapterName: chapter?.chapterName,
-                                        coverImage: chapter?.coverImage,
-                                      });
-                                      setVerifyBuy(false);
-                                      onOpen();
-                                    }}
-                                  >
-                                    Mua ngay
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  className="mt-4 w-full px-8 mx-8 bg-gradient-to-r from-[#A958FE] to-[#DA5EF0] hover:scale-[1.01] transition ease-in-out duration-300"
-                                  onClick={() => {
-                                    router.push("/auth/login");
-                                  }}
-                                >
-                                  Đăng nhập để mua chương
-                                </Button>
-                              )}
-                            </SheetClose>
-                          </SheetFooter>
-                        </SheetContent>
-                      </Sheet>
-                    ) : (
-                      <Button
-                        className={`text-[#DA5EF0] text-lg w-[100px] ${
-                          chapter?.unlockPrice === 0
-                            ? "text-[#DA5EF0] bg-transparent"
-                            : "bg-transparent text-gray-500"
-                        }`}
-                        onClick={() => {
-                          router.push(
-                            `/comic/${id}/chapter?chapterId=${chapter?._id}`
-                          );
-                        }}
-                      >
-                        {chapter?.unlockPrice === 0 ? "Miễn phí" : "Đã mua"}
-                      </Button>
+                  <ComicChapterItem
+                    comicId={id}
+                    isBought={boughtChapterList.includes(chapter?._id)}
+                    chapter={chapter}
+                    index={index}
+                    comicName={data[0].comicName}
+                    userId={userId}
+                    userCoin={(userInfo?.coinPoint || "0")?.toLocaleString(
+                      "de-DE"
                     )}
-                  </div>
+                    setVerifyBuy={setVerifyBuy}
+                    processBuyChapter={processBuyChapter}
+                    router={router}
+                  />
                 </div>
               ))}
             </div>

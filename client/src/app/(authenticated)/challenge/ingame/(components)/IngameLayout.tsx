@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Timer, ArrowRight, CheckCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,20 +12,21 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useDisclosure } from "@nextui-org/modal";
 import { ReceivedCoinDialog } from "@/components/receivedCoinDialog";
+import { QuestionCollection } from "./ConcreateCollection";
+import { Question } from "./question";
+import { QuestionIterator } from "./ConcreateIterator";
 
 const IngameLayout = ({ session }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | null>
   >({});
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [iterator, setIterator] = useState<QuestionIterator | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [score, setScore] = useState<number | null>(null);
   const [message, setMessage] = React.useState("");
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const router = useRouter();
-
-
-
 
   const {
     getChallengeInformation,
@@ -38,14 +39,14 @@ const IngameLayout = ({ session }) => {
     queryFn: getChallengeInformation,
   });
 
-  const { data: userChallengesPoint, isLoading: isUserChallengesPointLoading } = useQuery({
+  const { data: userChallengesPoint } = useQuery({
     queryKey: ["challenge", "userChallengesPoint"],
     queryFn: getUsersChallengesPoint,
   });
 
   useEffect(() => {
     if (userChallengesPoint) {
-      const challengePoint = userChallengesPoint.find(
+      const challengePoint = (userChallengesPoint || []).find(
         (point) => point.userId === session?.user?.id
       );
       if (challengePoint && challengePoint.point.length > 0) {
@@ -60,22 +61,33 @@ const IngameLayout = ({ session }) => {
   const questionList = challengeInformation?.questionCollection || [];
 
   useEffect(() => {
+    if (challengeInformation?.questionCollection?.length) {
+      const qc = new QuestionCollection();
+      challengeInformation.questionCollection.forEach((q) => qc.addQuestion(q));
+      const it = qc.createIterator();
+      setIterator(it);
+      setCurrentQuestion(it.goTo(0));
+    }
+  }, [challengeInformation]);
+
+  useEffect(() => {
     if (timeLeft > 0) {
       const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
       return () => clearInterval(timer);
     }
   }, [timeLeft]);
 
-  const handleAnswerSelect = (questionIndex: number, answerIndex: number) => {
+  const handleAnswerSelect = (questionId: string, answerIndex: number) => {
     setSelectedAnswers((prev) => ({
       ...prev,
-      [questionIndex]: answerIndex,
+      [questionId]: answerIndex,
     }));
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < questionList.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+    if (!iterator || !currentQuestion) return;
+    if (iterator?.getCurrentIndex() < questionList.length - 1) {
+      setCurrentQuestion(iterator?.next());
     } else {
       calculateScore();
     }
@@ -103,14 +115,16 @@ const IngameLayout = ({ session }) => {
 
   const calculateScore = async () => {
     let correctAnswers = 0;
-    const userAnswers = [];
-    const isCorrect = [];
+    const userAnswers: string[] = [];
+    const isCorrect: boolean[] = [];
 
-    questionList.forEach((question, index) => {
-      const userAnswerIndex = selectedAnswers[index];
+    iterator?.reset();
+    while (iterator?.hasNext()) {
+      const question = iterator?.next();
+      const userAnswerIndex = selectedAnswers[question.questionId];
       const correctAnswerIndex = question.correctAnswerID;
 
-      if (userAnswerIndex !== null) {
+      if (userAnswerIndex !== null && userAnswerIndex !== undefined) {
         if (userAnswerIndex === correctAnswerIndex) {
           correctAnswers++;
           isCorrect.push(true);
@@ -119,7 +133,7 @@ const IngameLayout = ({ session }) => {
         }
         userAnswers.push(question.answers[userAnswerIndex]);
       }
-    });
+    }
 
     const timeBonus = Math.min(Math.floor(timeLeft / 60) * 20, 1000);
     const questionPoints = correctAnswers * 100;
@@ -134,7 +148,9 @@ const IngameLayout = ({ session }) => {
 
     try {
       setMessage(
-        `Chúc mừng bạn đã hoàn thành thử thách với ${totalPoints} điểm. Phần thưởng là ${Math.ceil(totalPoints / 10)} skycoin.`
+        `Chúc mừng bạn đã hoàn thành thử thách với ${totalPoints} điểm. Phần thưởng là ${Math.ceil(
+          totalPoints / 10
+        )} skycoin.`
       );
       onOpen();
       await uploadChallengesPoint(data);
@@ -146,10 +162,6 @@ const IngameLayout = ({ session }) => {
       console.log("Error uploading challenges point");
     }
   };
-
-
-
-  const currentQuestion = questionList[currentQuestionIndex];
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -177,11 +189,16 @@ const IngameLayout = ({ session }) => {
                   <div className="text-lg font-medium flex items-center gap-2">
                     <span>Câu hỏi:</span>
                     <span className="text-emerald-400 font-bold">
-                      {currentQuestionIndex + 1}/{questionList.length}
+                      {(iterator?.getCurrentIndex() || 0) + 1}/
+                      {questionList.length}
                     </span>
                   </div>
                   <Progress
-                    value={(currentQuestionIndex / questionList.length) * 100}
+                    value={
+                      ((iterator?.getCurrentIndex() || 0) /
+                        questionList.length) *
+                      100
+                    }
                     className="w-full sm:w-48 h-2 bg-zinc-800"
                   />
                 </div>
@@ -218,14 +235,18 @@ const IngameLayout = ({ session }) => {
                         group relative h-auto py-6 px-6
                         bg-emerald-500/10 hover:bg-emerald-500/20
                         border-2 border-transparent
-                        ${selectedAnswers[currentQuestionIndex] === index
-                              ? "border-emerald-500"
-                              : ""
-                            }
+                        ${
+                          selectedAnswers[currentQuestion.questionId] === index
+                            ? "border-emerald-500"
+                            : ""
+                        }
                         transition-all duration-200
                                                 `}
                           onClick={() =>
-                            handleAnswerSelect(currentQuestionIndex, index)
+                            handleAnswerSelect(
+                              currentQuestion.questionId,
+                              index
+                            )
                           }
                         >
                           <div className="flex items-center justify-start w-full gap-3">
@@ -244,7 +265,8 @@ const IngameLayout = ({ session }) => {
                               {answer}
                             </span>
                           </div>
-                          {selectedAnswers[currentQuestionIndex] === index && (
+                          {selectedAnswers[currentQuestion.questionId] ===
+                            index && (
                             <CheckCircle className="absolute right-4 text-emerald-400 w-5 h-5" />
                           )}
                         </Button>
@@ -267,9 +289,11 @@ const IngameLayout = ({ session }) => {
                       "var(--button_primary_background_color, linear-gradient(90deg, #34d399, #60a5fa 50%, #34d399))",
                   }}
                   onClick={handleNext}
-                  disabled={selectedAnswers[currentQuestionIndex] === null}
+                  disabled={
+                    selectedAnswers[iterator?.getCurrentIndex() || -1] === null
+                  }
                 >
-                  {currentQuestionIndex === questionList.length - 1
+                  {iterator?.getCurrentIndex() === questionList.length - 1
                     ? "Hoàn thành"
                     : "Tiếp theo"}
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -278,9 +302,14 @@ const IngameLayout = ({ session }) => {
               {questionList.map((question, index) => (
                 <Card
                   key={question.questionId}
-                  className={`bg-zinc-900/50 border-zinc-800 p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer ${currentQuestionIndex === index ? "border-emerald-500" : ""
-                    }`}
-                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`bg-zinc-900/50 border-zinc-800 p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer ${
+                    iterator?.getCurrentIndex() === index
+                      ? "border-emerald-500"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setCurrentQuestion(iterator?.goTo(index) || null)
+                  }
                 >
                   <div className="flex gap-4">
                     <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-sm">

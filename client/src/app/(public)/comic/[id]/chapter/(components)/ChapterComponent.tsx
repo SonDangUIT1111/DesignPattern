@@ -67,6 +67,7 @@ const ChapterComponent = ({ comicId, session }) => {
   const router = useRouter();
   const [boughtChapterList, setBoughtChapterList] = useState([]);
   const [processPayment, setProcessPayment] = useState(false);
+  const [invalidAcc, setInvalidAcc] = useState(false);
   let boughtInfo = {
     chapterId: "",
     unlockPrice: 0,
@@ -133,6 +134,9 @@ const ChapterComponent = ({ comicId, session }) => {
           boughtInfo?.chapterId
         );
         setBoughtChapterList([...boughtChapterList, boughtInfo.chapterId]);
+        if (boughtInfo?.chapterId === chapterId) {
+          setInvalidAcc(false);
+        }
       }
     } catch (error) {
       setErrorMessage(
@@ -146,7 +150,19 @@ const ChapterComponent = ({ comicId, session }) => {
     const result = await getChapter(comicId);
     if (userId) {
       const boughtList = await getPaymentHistories(userId);
+      if (!boughtList.includes(chapterId)) {
+        setInvalidAcc(true);
+        setModalMode("invalidAccess");
+        onOpen();
+      }
       setBoughtChapterList(boughtList);
+    } else if (
+      result[0]?.detailChapterList?.find((i) => i?._id === chapterId)
+        ?.unlockPrice !== 0
+    ) {
+      setInvalidAcc(true);
+      setModalMode("invalidAccess");
+      onOpen();
     }
     setChapterList(result[0]?.detailChapterList);
     setCurrentChapterDetail(
@@ -205,9 +221,11 @@ const ChapterComponent = ({ comicId, session }) => {
         ) : (
           <>
             <div className="flex flex-col w-2/3">
-              {currentChapterDetail?.map((item) => (
-                <img key={item} src={item} />
-              ))}
+              {!invalidAcc &&
+                currentChapterDetail?.map((item) => (
+                  <img key={item} src={item} />
+                ))}
+              {invalidAcc && <img src={currentChapterDetail[0]} />}
             </div>
             <div className="fixed bottom-0 left-0 right-0 flex flex-col gap-0">
               <Progress
@@ -446,6 +464,9 @@ const ChapterComponent = ({ comicId, session }) => {
         onClose={onClose}
         placement="center"
         className="bg-black"
+        hideCloseButton={modalMode === "invalidAccess" ? true : false}
+        isDismissable={modalMode === "invalidAccess" ? false : true}
+        isKeyboardDismissDisabled={modalMode === "invalidAccess" ? true : false}
       >
         <ModalContent>
           <>
@@ -487,12 +508,67 @@ const ChapterComponent = ({ comicId, session }) => {
                   </div>
                 )}
               </ModalBody>
+            ) : modalMode === "invalidAccess" ? (
+              <ModalBody>
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="text-red-500 w-full h-full text-center flex flex-row gap-2 items-center">
+                    <MdErrorOutline className="text-red-500 w-5 h-5" />
+                    Không thể truy cập chương truyện này
+                  </div>
+                  <div className="text-white w-full h-full text-center flex flex-row gap-2 items-start">
+                    {
+                      "Đây là chương truyện tính phí, bạn vui lòng thực hiện thanh toán trước khi đọc!"
+                    }
+                  </div>
+                  <div className="flex flex-row gap-3 w-full mt-4 px-4">
+                    <Button
+                      size="default"
+                      className="basis-1/2 bg-transparent border-solid border-2 border-[#DA5EF0] text-[#DA5EF0] hover:bg-[#DA5EF0] hover:text-white"
+                      onClick={() => {
+                        router.push("/");
+                      }}
+                    >
+                      Trang chủ
+                    </Button>
+                    <Button
+                      size="default"
+                      className="basis-1/2 bg-gradient-to-r from-[#A958FE] to-[#DA5EF0] transition ease-in-out duration-300 hover:scale-[1.01]"
+                      onClick={() => {
+                        if (!userId) {
+                          router.push("/auth/login");
+                        } else {
+                          boughtInfo = {
+                            ...boughtInfo,
+                            chapterId: chapterId || "0",
+                          };
+                          processBuyChapter();
+                          setModalMode("pay");
+                          onOpen();
+                        }
+                      }}
+                    >
+                      {userId ? "Mua ngay" : "Đăng nhập"}
+                    </Button>
+                  </div>
+                  <Divider className="h-[0.8px] bg-[#686868] rounded-full" />
+                  <div className="flex flex-col gap-1 justify-center w-full items-center">
+                    <span className="text-[#A958FE] font-semibold text-base">
+                      Cảm ơn bạn đã chọn Skylark
+                    </span>
+                    <span className="text-gray-300 font-medium text-sm">
+                      Chúc bạn có một trải nghiệm vui vẻ
+                    </span>
+                  </div>
+                </div>
+              </ModalBody>
             ) : (
               <ModalBody>
                 <ChapterComment chapterId={chapterId} userId={userId} />
               </ModalBody>
             )}
-            {modalMode === "pay" && <ModalFooter></ModalFooter>}
+            {(modalMode === "pay" || modalMode === "invalidAccess") && (
+              <ModalFooter></ModalFooter>
+            )}
           </>
         </ModalContent>
       </Modal>
