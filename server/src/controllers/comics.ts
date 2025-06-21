@@ -740,26 +740,22 @@ export const addRootChapterComments: RequestHandler = async (
 ) => {
   try {
     const { chapterId, userId, content } = req.body;
-    var chapter = await ComicChapterModel.findById(chapterId);
-    if (!chapter) {
-      return res.sendStatus(400);
+    
+    // Use CommentService for cleaner code
+    const { CommentService } = await import('../services/CommentService');
+    const commentService = new CommentService();
+    
+    const result = await commentService.addRootComment(chapterId, userId, content);
+    
+    if (!result.success) {
+      return res.status(400).json({
+        error: result.error,
+        errorCode: result.errorCode,
+        data: result.data
+      });
     }
-    var user = await UserModel.findById(userId);
-    if (!user) {
-      return res.sendStatus(400);
-    }
-    chapter.comments.push({
-      _id: new mongoose.Types.ObjectId(),
-      userId: new mongoose.Types.ObjectId(userId),
-      likes: new mongoose.Types.Array(),
-      replies: new mongoose.Types.Array(),
-      content: content,
-      avatar: user.avatar,
-      userName: user.username === null ? "" : user.username,
-    });
-    console.log(chapter.comments);
-    await chapter?.save();
-    return res.status(200).json(chapter).end();
+    
+    return res.status(200).json(result.data.chapter);
   } catch (error) {
     next(error);
   }
@@ -772,33 +768,22 @@ export const addChildChapterComments: RequestHandler = async (
 ) => {
   try {
     const { chapterId, userId, commentId, content } = req.body;
-    var chapter = await ComicChapterModel.findById(chapterId);
-    if (!chapter) {
-      return res.sendStatus(400);
+    
+    // Use CommentService for cleaner code
+    const { CommentService } = await import('../services/CommentService');
+    const commentService = new CommentService();
+    
+    const result = await commentService.addChildComment(chapterId, userId, content, commentId);
+    
+    if (!result.success) {
+      return res.status(400).json({
+        error: result.error,
+        errorCode: result.errorCode,
+        data: result.data
+      });
     }
-
-    var user = await UserModel.findById(userId);
-    if (!user) {
-      return res.sendStatus(400);
-    }
-
-    chapter.comments.forEach(async (item, index) => {
-      if (item._id.toString() === commentId) {
-        item.replies.push({
-          _id: new mongoose.Types.ObjectId(),
-          userId: new mongoose.Types.ObjectId(userId),
-          likes: new mongoose.Types.Array(),
-          content: content,
-          avatar: user?.avatar,
-          userName: user?.username,
-        });
-        const changed = await ComicChapterModel.findByIdAndUpdate(
-          chapterId,
-          chapter!
-        );
-        return res.status(200).json(changed).end();
-      }
-    });
+    
+    return res.status(200).json(result.data.chapter);
   } catch (error) {
     next(error);
   }
@@ -808,36 +793,18 @@ export const checkValidCommentContent: RequestHandler = async (
   res,
   next
 ) => {
-  const url = req.url;
-  const [, params] = url.split("?");
-  const parsedParams = qs.parse(params);
-  var content =
-    typeof parsedParams.content === "string" ? parsedParams.content : "";
-  content = content.toLowerCase();
-  const sensitiveWords = [
-    "fuck",
-    "dick",
-    "pussy",
-    "fucker",
-    "cặc",
-    "lồn",
-    "loz",
-    "cak",
-    "địt",
-    "đụ",
-    "cc",
-  ];
   try {
-    var isValid = true;
-    if (content.includes("https") || content.includes("http")) {
-      isValid = false;
-    }
-    sensitiveWords.forEach((word) => {
-      if (content.includes(word)) {
-        isValid = false;
-      }
-    });
-    res.status(200).json(isValid === undefined ? {} : isValid);
+    const url = req.url;
+    const [, params] = url.split("?");
+    const parsedParams = qs.parse(params);
+    const content = typeof parsedParams.content === "string" ? parsedParams.content : "";
+    
+    // Use CommentService for content validation
+    const { CommentService } = await import('../services/CommentService');
+    const result = await CommentService.validateContent(content);
+    
+    // Return true if valid, false if invalid (to maintain API compatibility)
+    res.status(200).json(result.success);
   } catch (error) {
     next(error);
   }

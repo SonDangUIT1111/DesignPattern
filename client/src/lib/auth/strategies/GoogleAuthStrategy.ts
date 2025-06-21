@@ -11,7 +11,6 @@ export class GoogleAuthStrategy implements AuthStrategy {
   }
 
   isAvailable(): boolean {
-    // Check if Google is configured
     return typeof window !== 'undefined' && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID !== undefined;
   }
 

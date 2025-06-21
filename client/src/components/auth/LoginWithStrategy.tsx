@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Button } from "@nextui-org/react";
+import { Button } from "@/components/ui/button";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { FaFacebook, FaGoogle } from "react-icons/fa";
 import { useAuthStrategy } from "@/hooks/useAuthStrategy";
@@ -29,14 +29,12 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
     isProviderAvailable,
   } = useAuthStrategy();
 
-  // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({
         ...prev,
@@ -45,7 +43,6 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
     }
   };
 
-  // Validate form
   const validateForm = () => {
     const newErrors = {
       phone: "",
@@ -63,7 +60,6 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
     return !newErrors.phone && !newErrors.password;
   };
 
-  // Handle phone/password login
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -156,12 +152,7 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-[60%] rounded-full h-[50px] text-white text-base font-medium mt-2 transition-colors transition-transform transition-shadow transition-all duration-500 bg-left hover:bg-right hover:shadow-[#A958FE] hover:shadow-lg data-[hover=true]:opacity-100"
-              style={{
-                backgroundSize: "200% auto",
-                backgroundImage:
-                  "var(--button_primary_background_color, linear-gradient(90deg, #A958FE, #DA5EF0 50%, #A958FE))",
-              }}
+              className="w-[60%] rounded-full h-[50px] text-white text-base font-medium mt-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
             >
               {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
@@ -178,28 +169,24 @@ const LoginWithStrategy = ({ className }: { className?: string }) => {
 
           <div className="flex gap-3">
             {/* Facebook Login */}
-            {isProviderAvailable("facebook") && (
-              <Button
-                onClick={handleFacebookLogin}
-                disabled={isLoading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2"
-              >
-                <FaFacebook size={20} />
-                Facebook
-              </Button>
-            )}
+            <Button
+              onClick={handleFacebookLogin}
+              disabled={isLoading || !isProviderAvailable("facebook")}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaFacebook size={20} />
+              Facebook
+            </Button>
 
             {/* Google Login */}
-            {isProviderAvailable("google") && (
-              <Button
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2"
-              >
-                <FaGoogle size={20} />
-                Google
-              </Button>
-            )}
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={isLoading || !isProviderAvailable("google")}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-full h-[50px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FaGoogle size={20} />
+              Google
+            </Button>
           </div>
         </div>
 

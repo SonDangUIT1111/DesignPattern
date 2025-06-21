@@ -9,10 +9,7 @@ export const useAuthStrategy = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentProvider, setCurrentProvider] = useState<AuthProvider | null>(null);
   
-  // Create AuthContext instance
   const authContext = useMemo(() => new AuthContext(), []);
-  
-  // Get available providers
   const availableProviders = useMemo(() => authContext.getAvailableProviders(), [authContext]);
 
   const selectProvider = useCallback((provider: AuthProvider): boolean => {
@@ -30,21 +27,15 @@ export const useAuthStrategy = () => {
     setIsLoading(true);
     
     try {
-      // Set the strategy
       if (!selectProvider(provider)) {
         return {
           success: false,
           error: `Provider ${provider} is not available`,
         };
       }
-
-      // Authenticate
       const result = await authContext.authenticate(credentials);
-      
       if (result.success) {
         toast.success("Đăng nhập thành công");
-        
-        // Handle redirect if provided
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl;
         } else {

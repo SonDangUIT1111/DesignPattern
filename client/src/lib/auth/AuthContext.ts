@@ -15,7 +15,6 @@ export class AuthContext {
   }
 
   private initializeStrategies(): void {
-    // Register all available strategies
     this.strategies.set("phone", new PhoneAuthStrategy());
     this.strategies.set("facebook", new FacebookAuthStrategy());
     this.strategies.set("google", new GoogleAuthStrategy());
@@ -40,11 +39,9 @@ export class AuthContext {
   public async authenticate(credentials?: AuthCredentials): Promise<AuthResult> {
     if (!this.currentStrategy) {
       return {
-        success: false,
-        error: "No authentication strategy selected",
+        success: false, error: "No authentication strategy selected",
       };
     }
-
     return await this.currentStrategy.authenticate(credentials);
   }
 
