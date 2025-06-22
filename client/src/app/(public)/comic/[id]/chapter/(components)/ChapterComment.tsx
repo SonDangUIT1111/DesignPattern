@@ -121,22 +121,35 @@ export const ChapterComment = ({ chapterId, userId }) => {
       form.reset({ comment: "" });
       return;
     }
-    if (commentIdReplied) {
-      setUserNameReplied("");
-      setUserIdReplied("");
-      await addChildChapterComment(
-        chapterId,
-        commentIdReplied,
-        userId,
-        commentContent
-      );
-      await sendPushNoti(userIdReplied);
-      await addCommentNotiToUser(userIdReplied, chapterId, "commentChapter");
-      setCommentIdReplied("");
-      getChapterComment();
-    } else {
-      await addRootChapterComment(chapterId, userId, commentContent);
-      getChapterComment();
+    
+    try {
+      if (commentIdReplied) {
+        setUserNameReplied("");
+        setUserIdReplied("");
+        await addChildChapterComment(
+          chapterId,
+          commentIdReplied,
+          userId,
+          commentContent
+        );
+        await sendPushNoti(userIdReplied);
+        await addCommentNotiToUser(userIdReplied, chapterId, "commentChapter");
+        setCommentIdReplied("");
+        getChapterComment();
+      } else {
+        await addRootChapterComment(chapterId, userId, commentContent);
+        getChapterComment();
+      }
+    } catch (error) {
+      // Handle error from chain of responsibility
+      if (error?.error) {
+        setModalMessage(error.error);
+        onOpen();
+      } else {
+        setModalMessage("Có lỗi xảy ra khi gửi bình luận. Vui lòng thử lại.");
+        onOpen();
+      }
+      console.error("Comment error:", error);
     }
   }
 

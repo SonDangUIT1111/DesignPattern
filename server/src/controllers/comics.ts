@@ -748,6 +748,7 @@ export const addRootChapterComments: RequestHandler = async (
     const result = await commentService.addRootComment(chapterId, userId, content);
     
     if (!result.success) {
+      console.log('Chain of Responsibility detected error:', result.error, result.errorCode);
       return res.status(400).json({
         error: result.error,
         errorCode: result.errorCode,
@@ -757,6 +758,7 @@ export const addRootChapterComments: RequestHandler = async (
     
     return res.status(200).json(result.data.chapter);
   } catch (error) {
+    console.error('Error in addRootChapterComments:', error);
     next(error);
   }
 };
@@ -776,6 +778,7 @@ export const addChildChapterComments: RequestHandler = async (
     const result = await commentService.addChildComment(chapterId, userId, content, commentId);
     
     if (!result.success) {
+      console.log('Chain of Responsibility detected error:', result.error, result.errorCode);
       return res.status(400).json({
         error: result.error,
         errorCode: result.errorCode,
@@ -785,6 +788,7 @@ export const addChildChapterComments: RequestHandler = async (
     
     return res.status(200).json(result.data.chapter);
   } catch (error) {
+    console.error('Error in addChildChapterComments:', error);
     next(error);
   }
 };
