@@ -15,10 +15,8 @@ export class CommentSaveHandler extends BaseCommentHandler {
       }
 
       if (commentId) {
-        // This is a child comment (reply)
         return await this.saveChildComment(request);
       } else {
-        // This is a root comment
         return await this.saveRootComment(request);
       }
     } catch (error) {

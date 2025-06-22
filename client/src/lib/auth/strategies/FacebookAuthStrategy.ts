@@ -11,7 +11,6 @@ export class FacebookAuthStrategy implements AuthStrategy {
   }
 
   isAvailable(): boolean {
-    // Remove window check to avoid hydration issues
     return process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_ID !== undefined;
   }
 

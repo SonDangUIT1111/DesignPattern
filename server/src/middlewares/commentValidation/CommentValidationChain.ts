@@ -15,14 +15,12 @@ export class CommentValidationChain {
     const spamDetector = new SpamDetectionHandler();
     const commentSaver = new CommentSaveHandler();
 
-    // Build the chain properly - set the first handler as chain head
     contentValidator
       .setNext(userValidator)
       .setNext(chapterValidator)
       .setNext(spamDetector)
       .setNext(commentSaver);
       
-    // The chain should start with the first handler
     this.chain = contentValidator;
   }
 
@@ -30,7 +28,6 @@ export class CommentValidationChain {
     return await this.chain.handle(request);
   }
 
-  // Factory method for creating validation-only chain (without saving)
   public static createValidationOnlyChain(): BaseCommentHandler {
     const contentValidator = new ContentValidationHandler();
     const userValidator = new UserValidationHandler();
@@ -43,17 +40,15 @@ export class CommentValidationChain {
       .setNext(spamDetector);
   }
 
-  // Factory method for creating content-only validation chain
   public static createContentValidationChain(): BaseCommentHandler {
     return new ContentValidationHandler();
   }
 
-  // Method to validate comment content only (for API endpoint)
   public static async validateContentOnly(content: string): Promise<CommentValidationResult> {
     const contentValidator = new ContentValidationHandler();
     const request: CommentRequest = {
-      userId: "temp", // dummy value for content-only validation
-      chapterId: "temp", // dummy value for content-only validation
+      userId: "temp", 
+      chapterId: "temp", 
       content: content
     };
 

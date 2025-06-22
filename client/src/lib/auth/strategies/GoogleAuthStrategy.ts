@@ -2,7 +2,6 @@ import { signIn } from "next-auth/react";
 import { AuthStrategy, AuthResult, AuthCredentials } from "./AuthStrategy";
 
 export interface GoogleCredentials extends AuthCredentials {
-  // Google doesn't need explicit credentials from user, handled by OAuth
 }
 
 export class GoogleAuthStrategy implements AuthStrategy {
@@ -11,7 +10,6 @@ export class GoogleAuthStrategy implements AuthStrategy {
   }
 
   isAvailable(): boolean {
-    // Remove window check to avoid hydration issues
     return process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID !== undefined;
   }
 

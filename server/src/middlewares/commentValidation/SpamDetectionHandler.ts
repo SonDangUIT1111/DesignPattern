@@ -9,7 +9,6 @@ export class SpamDetectionHandler extends BaseCommentHandler {
     const content = request.content.trim().toLowerCase();
     const now = new Date();
 
-    // Rate limiting: max 5 comments per minute per user
     const userStats = SpamDetectionHandler.userCommentCount.get(userId);
     if (userStats) {
       const timeDiff = now.getTime() - userStats.lastReset.getTime();
