@@ -24,10 +24,23 @@ export const useUser = () => {
   };
 
   const fetchUserInfoById = async (id) => {
-    const res = await getRequest({
-      endPoint: `/api/user?id=${id}`,
-    });
-    return res;
+    try {
+      console.log("useUser - fetchUserInfoById called with ID:", id);
+      const res = await getRequest({
+        endPoint: `/api/user?id=${id}`,
+      });
+      console.log("useUser - fetchUserInfoById response:", res);
+      console.log("useUser - fetchUserInfoById response type:", typeof res);
+      
+      // Handle both direct data and axios response object
+      const userData = res?.data || res;
+      console.log("useUser - extracted userData:", userData);
+      
+      return userData;
+    } catch (error) {
+      console.error("useUser - fetchUserInfoById error:", error);
+      throw error;
+    }
   };
 
   const updateUserInfo = async (data) => {

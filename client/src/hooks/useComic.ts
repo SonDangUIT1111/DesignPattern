@@ -137,16 +137,20 @@ export const useComic = () => {
   };
 
   const addRootChapterComment = async (chapterId, userId, content) => {
-    const res = await postRequest({
-      endPoint: `${baseApiUrl}/api/comics/addRootChapterComments`,
-      isFormData: false,
-      formData: {
-        chapterId,
-        userId,
-        content,
-      },
-    });
-    return res;
+    try {
+      const res = await postRequest({
+        endPoint: `${baseApiUrl}/api/comics/addRootChapterComments`,
+        isFormData: false,
+        formData: {
+          chapterId,
+          userId,
+          content,
+        },
+      });
+      return res;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const addChildChapterComment = async (
@@ -155,17 +159,22 @@ export const useComic = () => {
     userId,
     content
   ) => {
-    const res = await postRequest({
-      endPoint: `${baseApiUrl}/api/comics/addChildChapterComments`,
-      isFormData: false,
-      formData: {
-        chapterId,
-        commentId,
-        userId,
-        content,
-      },
-    });
-    return res;
+    try {
+      const res = await postRequest({
+        endPoint: `${baseApiUrl}/api/comics/addChildChapterComments`,
+        isFormData: false,
+        formData: {
+          chapterId,
+          commentId,
+          userId,
+          content,
+        },
+      });
+      return res;
+    } catch (error) {
+      // Re-throw the error to be handled by the calling component
+      throw error;
+    }
   };
 
   const updateUserLikeChildComment = async (

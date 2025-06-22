@@ -32,9 +32,13 @@ import {
 } from "@nextui-org/react";
 
 const UserProfileLayout = ({ session }) => {
+  console.log("UserProfileLayout session:", session);
+  console.log("UserProfileLayout session.user:", session?.user);
+  console.log("UserProfileLayout session.user.id:", session?.user?.id);
+  
   const { fetchUserInfoById, getAvatarList, updateAvatar, updateUsername } =
     useUser();
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(session?.user?.name || session?.user?.username || "");
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
 
@@ -60,15 +64,42 @@ const UserProfileLayout = ({ session }) => {
     data: userInfo,
     isLoading: isUserInfoLoading,
     refetch: refetchUserInfo,
+    error,
   } = useQuery({
     queryKey: ["user", "info", session?.user?.id],
     queryFn: async () => {
-      if (!session?.user?.id) return {};
+      if (!session?.user?.id) {
+        console.log("No session user ID available");
+        return {};
+      }
+      console.log("Fetching user info for ID:", session?.user?.id);
       const res = await fetchUserInfoById(session?.user?.id);
-      setUsername(res.username);
-      return res;
+      console.log("fetchUserInfoById response:", res);
+      
+      // Handle the response properly
+      const userData = res || {};
+      if (userData?.username) {
+        setUsername(userData.username);
+      }
+      return userData;
     },
+    enabled: !!session?.user?.id,
+    staleTime: 0, // Disable caching temporarily
+    cacheTime: 0, // Disable caching temporarily
   });
+
+  console.log("Query state - userInfo:", userInfo);
+  console.log("Query state - isLoading:", isUserInfoLoading);
+  console.log("Query state - error:", error);
+
+  // Fallback to session data if API fails
+  const displayUserInfo = userInfo || {
+    id: session?.user?.id,
+    username: session?.user?.name || session?.user?.username,
+    avatar: session?.user?.image || session?.user?.avatar,
+    coinPoint: session?.user?.coinPoint || 0,
+    phone: session?.user?.phone || session?.user?.email,
+  };
 
   const { data: avatarList, isLoading: isAvatarListLoading } = useQuery({
     queryKey: ["avatar", "list"],
@@ -114,7 +145,7 @@ const UserProfileLayout = ({ session }) => {
                 <div className="relative w-32 h-32 mb-4">
                   <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#DA5EF0]">
                     <Image
-                      src={userInfo?.avatar || "/placeholder.svg"}
+                      src={displayUserInfo?.avatar || "/placeholder.svg"}
                       alt="Profile picture"
                       width={128}
                       height={128}
@@ -124,7 +155,7 @@ const UserProfileLayout = ({ session }) => {
                   <div className="absolute bottom-2 right-0 z-10">
                     <AvatarDialog
                       avatarList={avatarList}
-                      currentAvatar={userInfo?.avatar}
+                      currentAvatar={displayUserInfo?.avatar}
                       onUpdateAvatar={updateAvatar}
                       userId={session?.user?.id}
                       refetchUserInfo={refetchUserInfo}
@@ -137,7 +168,7 @@ const UserProfileLayout = ({ session }) => {
                       className="text-center text-white text-lg font-semibold rounded-none border-t-0 border-l-0 border-r-0 border-b-1.5 border-gray-500 focus-visible:ring-0 w-fit"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder={userInfo?.username || "Không có dữ liệu"}
+                      placeholder={displayUserInfo?.username || "Không có dữ liệu"}
                     />
                     <div className="w-[46px] h-[46px] flex justify-center items-center">
                       <Button
@@ -151,7 +182,7 @@ const UserProfileLayout = ({ session }) => {
                     <div className="w-[46px] h-[46px] flex justify-center items-center">
                       <Button
                         onClick={() => {
-                          setUsername(userInfo?.username);
+                          setUsername(displayUserInfo?.username);
                           setIsEditing(false);
                         }}
                         className="group p-0 bg-transparent hover:bg-transparent h-fit transition ease-in-out duration-1000 hover:bg-red-400 hover:p-3 hover:rounded-full"
@@ -163,7 +194,7 @@ const UserProfileLayout = ({ session }) => {
                 ) : (
                   <div className="ml-[46px] flex flex-row items-center gap-3">
                     <span className="text-center text-white text-lg font-semibold">
-                      {userInfo?.username || "Không có dữ liệu"}
+                      {displayUserInfo?.username || "Không có dữ liệu"}
                     </span>
                     <div className="w-[46px] h-[46px] flex justify-center items-center">
                       <Button
@@ -178,7 +209,7 @@ const UserProfileLayout = ({ session }) => {
                 )}
                 <div className="flex flex-row gap-2">
                   <span className="text-gray-500 text-sm">UserId:</span>
-                  <span className="text-[#DA5EF0] text-sm">{userInfo?.id}</span>
+                  <span className="text-[#DA5EF0] text-sm">{displayUserInfo?.id}</span>
                 </div>
 
                 <div className="flex flex-row gap-2 mt-12 w-full justify-between">
@@ -188,7 +219,7 @@ const UserProfileLayout = ({ session }) => {
                     </span>
                     <div className="flex flex-row gap-2 text-white font-medium text-base">
                       <img src="/skycoin.png" className="w-[24px] h-[24px]" />
-                      Hiện có {userInfo?.coinPoint?.toLocaleString(
+                      Hiện có {displayUserInfo?.coinPoint?.toLocaleString(
                         "de-DE"
                       )}{" "}
                       skycoins
