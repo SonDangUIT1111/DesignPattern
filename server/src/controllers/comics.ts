@@ -10,7 +10,7 @@ import UserModel from "../models/user";
 import * as admin from "firebase-admin";
 import ComicAlbumModel from "../models/comicAlbum";
 import qs from "qs";
-import { StorageProviderFactory } from '../factories/StorageProviderFactory';
+import { FirebaseStorageAdapter } from '../adapters/FirebaseStorageAdapter';
 
 interface FileRequest extends Request {
     body: {
@@ -1040,12 +1040,6 @@ export const searchComicByGenres: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Helper function to get storage provider
-const getStorageProvider = () => {
-    return StorageProviderFactory.getProvider();
-};
-
-// Example of using storage in a controller method
 export const uploadComicImage: RequestHandler = async (req: FileRequest, res, next) => {
     try {
         const { file, filename, contentType } = req.body;
@@ -1056,7 +1050,7 @@ export const uploadComicImage: RequestHandler = async (req: FileRequest, res, ne
         // Convert base64 to buffer
         const buffer = Buffer.from(file.split(',')[1], 'base64');
 
-        const storage = getStorageProvider();
+        const storage = new FirebaseStorageAdapter();
         const result = await storage.uploadFile(buffer, {
             path: 'comics',
             filename: filename || `${Date.now()}-upload.${contentType.split('/')[1]}`,
@@ -1076,7 +1070,7 @@ export const deleteComicImage: RequestHandler = async (req, res, next) => {
             throw createHttpError(400, "File path is required");
         }
 
-        const storage = getStorageProvider();
+        const storage = new FirebaseStorageAdapter();
         const success = await storage.deleteFile(path);
 
         if (!success) {

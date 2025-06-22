@@ -81,4 +81,6 @@ router.get("/getReadingHistories", ComicsController.getReadingHistories);
 
 router.get("/searchComicByGenres", ComicsController.searchComicByGenres);
 
+router.post("/uploadComicImage", ComicsController.uploadComicImage);
+
 export default router;
