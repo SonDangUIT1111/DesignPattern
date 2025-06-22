@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 
 export class UserValidationHandler extends BaseCommentHandler {
   protected async process(request: CommentRequest): Promise<CommentValidationResult> {
-    // Validate userId format
     if (!mongoose.isValidObjectId(request.userId)) {
       return {
         success: false,
@@ -13,7 +12,6 @@ export class UserValidationHandler extends BaseCommentHandler {
       };
     }
 
-    // Find user
     const user = await UserModel.findById(request.userId);
     if (!user) {
       return {
@@ -23,7 +21,6 @@ export class UserValidationHandler extends BaseCommentHandler {
       };
     }
 
-    // Check if user is banned
     const accessDate = user.accessCommentDate;
     if (accessDate && accessDate > new Date()) {
       return {

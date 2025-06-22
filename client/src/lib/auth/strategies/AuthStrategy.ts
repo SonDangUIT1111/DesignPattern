@@ -1,4 +1,3 @@
-// Base interface for authentication strategies
 export interface AuthStrategy {
   authenticate(credentials: any): Promise<AuthResult>;
   getProviderName(): string;
