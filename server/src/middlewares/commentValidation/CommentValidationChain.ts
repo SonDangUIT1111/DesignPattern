@@ -1,9 +1,13 @@
-import { BaseCommentHandler, CommentRequest, CommentValidationResult } from './BaseCommentHandler';
-import { ContentValidationHandler } from './ContentValidationHandler';
-import { UserValidationHandler } from './UserValidationHandler';
-import { ChapterValidationHandler } from './ChapterValidationHandler';
-import { SpamDetectionHandler } from './SpamDetectionHandler';
-import { CommentSaveHandler } from './CommentSaveHandler';
+import {
+  BaseCommentHandler,
+  CommentRequest,
+  CommentValidationResult,
+} from "./BaseCommentHandler";
+import { ContentValidationHandler } from "./ContentValidationHandler";
+import { UserValidationHandler } from "./UserValidationHandler";
+import { ChapterValidationHandler } from "./ChapterValidationHandler";
+import { SpamDetectionHandler } from "./SpamDetectionHandler";
+import { CommentSaveHandler } from "./CommentSaveHandler";
 
 export class CommentValidationChain {
   private chain: BaseCommentHandler;
@@ -15,16 +19,18 @@ export class CommentValidationChain {
     const spamDetector = new SpamDetectionHandler();
     const commentSaver = new CommentSaveHandler();
 
-    contentValidator
-      .setNext(userValidator)
+    userValidator
+      .setNext(contentValidator)
       .setNext(chapterValidator)
       .setNext(spamDetector)
       .setNext(commentSaver);
-      
+
     this.chain = contentValidator;
   }
 
-  public async validateAndSaveComment(request: CommentRequest): Promise<CommentValidationResult> {
+  public async validateAndSaveComment(
+    request: CommentRequest
+  ): Promise<CommentValidationResult> {
     return await this.chain.handle(request);
   }
 
@@ -44,14 +50,16 @@ export class CommentValidationChain {
     return new ContentValidationHandler();
   }
 
-  public static async validateContentOnly(content: string): Promise<CommentValidationResult> {
+  public static async validateContentOnly(
+    content: string
+  ): Promise<CommentValidationResult> {
     const contentValidator = new ContentValidationHandler();
     const request: CommentRequest = {
-      userId: "temp", 
-      chapterId: "temp", 
-      content: content
+      userId: "temp",
+      chapterId: "temp",
+      content: content,
     };
 
     return await contentValidator.handle(request);
   }
-} 
+}
