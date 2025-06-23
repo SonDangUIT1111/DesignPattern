@@ -1,33 +1,44 @@
-import { Question,  QIterator } from "./question";
+import { Question, QuestionIterator } from "./question";
+import { ConcreateQuestionCollection } from "./ConcreateCollection";
 
-export class QuestionIterator implements QIterator<Question> {
-  private index = 0;
+export class ConcreateQuestionIterator implements QuestionIterator<Question> {
+  private iterationState = 0;
+  private collection: ConcreateQuestionCollection;
 
-  constructor(private questions: Question[]) {}
+  constructor(collection: ConcreateQuestionCollection) {
+    this.collection = collection;
+  }
 
   hasNext(): boolean {
-    return this.index < this.questions.length - 1;
+    console.log(
+      this.iterationState < this.collection.getQuestions().length - 1
+        ? "Có câu hỏi kế tiếp"
+        : "Hết gòi"
+    );
+    return this.iterationState < this.collection.getQuestions().length - 1;
   }
 
   next(): Question {
-    return this.questions[++this.index];
+    console.log("Đang lấy câu hỏi ở vị trí thứ ", this.iterationState + 1);
+    return this.collection.getQuestions()[++this.iterationState];
   }
 
-  goTo(index: number): Question | null {
-    if (index >= this.questions.length) return null;
-    this.index = index;
-    return this.questions[this.index]
+  goTo(iterationState: number): Question | null {
+    if (iterationState >= this.collection.getQuestions().length) return null;
+    this.iterationState = iterationState;
+    console.log("Đi tới câu hỏi số ", iterationState + 1);
+    return this.collection.getQuestions()[this.iterationState];
   }
 
   reset(): void {
-    this.index = -1;
+    this.iterationState = -1;
   }
 
   getCurrentIndex(): number {
-    return this.index;
+    return this.iterationState;
   }
 
   getCurrent(): Question {
-    return this.questions[this.index];
+    return this.collection.getQuestions()[this.iterationState];
   }
 }

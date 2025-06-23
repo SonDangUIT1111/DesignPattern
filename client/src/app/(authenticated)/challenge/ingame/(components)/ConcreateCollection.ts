@@ -1,14 +1,24 @@
-import { QuestionIterator } from "./ConcreateIterator";
-import { IterableCollection, Question, QIterator } from "./question";
+import { ConcreateQuestionIterator } from "./ConcreateIterator";
+import {
+  IterableQuestionCollection,
+  Question,
+  QuestionIterator,
+} from "./question";
 
-export class QuestionCollection implements IterableCollection<Question> {
+export class ConcreateQuestionCollection
+  implements IterableQuestionCollection<Question>
+{
   private questions: Question[] = [];
 
   addQuestion(question: Question) {
     this.questions.push(question);
   }
 
-  createIterator(): QIterator<Question> {
-    return new QuestionIterator(this.questions);
+  getQuestions(): Question[] {
+    return this.questions;
+  }
+
+  createIterator(): QuestionIterator<Question> {
+    return new ConcreateQuestionIterator(this);
   }
 }

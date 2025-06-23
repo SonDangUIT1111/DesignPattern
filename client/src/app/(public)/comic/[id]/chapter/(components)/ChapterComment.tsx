@@ -231,7 +231,7 @@ export const ChapterComment = ({ chapterId, userId }) => {
                           >
                             Trả lời
                           </div>
-                          <Dropdown className="bg-[#141414]">
+                          {/* <Dropdown className="bg-[#141414]">
                             <DropdownTrigger>
                               <div
                                 className="text-white text-[12px] font-semibold cursor-default"
@@ -297,7 +297,7 @@ export const ChapterComment = ({ chapterId, userId }) => {
                                 </DropdownItem>
                               </DropdownMenu>
                             )}
-                          </Dropdown>
+                          </Dropdown> */}
                         </div>
                         {item?.likes?.length > 0 && (
                           <p className="flex flex-row gap-1 justify-center items-center text-[#DA5EF0] text-[12px] font-semibold">
@@ -379,7 +379,7 @@ export const ChapterComment = ({ chapterId, userId }) => {
                                   ? "Đã thích"
                                   : "Thích"}
                               </div>
-                              <Dropdown className="bg-[#141414]">
+                              {/* <Dropdown className="bg-[#141414]">
                                 <DropdownTrigger>
                                   <div
                                     className="text-white text-[12px] font-semibold cursor-default"
@@ -445,7 +445,7 @@ export const ChapterComment = ({ chapterId, userId }) => {
                                     </DropdownItem>
                                   </DropdownMenu>
                                 )}
-                              </Dropdown>
+                              </Dropdown> */}
                             </div>
                             {child?.likes?.length > 0 && (
                               <p className="flex flex-row gap-1 justify-center items-center text-[#DA5EF0] text-[12px] font-semibold">

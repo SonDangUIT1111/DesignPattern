@@ -1,58 +1,75 @@
 import { ComicChapterContext } from "./comic_chapter_context";
 
 export interface ComicChapterState {
-  access(context: ComicChapterContext): void;
-  buy(context: ComicChapterContext): void;
-  isFree(): boolean;
-  isBought(): boolean;
+  access(): void;
+  buy(): void;
+  getIsFree(): boolean;
+  getIsBought(): boolean;
 }
 
 export class FreeState implements ComicChapterState {
-  access(context: ComicChapterContext): void {
+  context: ComicChapterContext;
+
+  setContext(context: ComicChapterContext) {
+    this.context = context;
+  }
+  access(): void {
     console.log("Chương miễn phí, đọc thôithôi");
-    context.goToChapterPage();
+    this.context.goToChapterPage();
   }
   buy(): void {
     console.log("Này miễn phí khỏi mua");
   }
-  isFree(): boolean {
+  getIsFree(): boolean {
     return true;
   }
-  isBought(): boolean {
+  getIsBought(): boolean {
     return false;
   }
 }
 
 export class PremiumState implements ComicChapterState {
-  access(context: ComicChapterContext): void {
+  context: ComicChapterContext;
+
+  setContext(context: ComicChapterContext) {
+    this.context = context;
+  }
+
+  access(): void {
     console.log("Truyện này tính phí, vui lòng thanh toán");
-    context.openPaidDialog();
+    this.context.openPaidDialog();
   }
-  buy(context: ComicChapterContext): void {
+  buy(): void {
     console.log("Oke để mua");
-    context.buyChapter();
-    context.setState(new UnlockedState());
+    this.context.buyChapter();
+    this.context.setState(new UnlockedState());
   }
-  isFree(): boolean {
+  getIsFree(): boolean {
     return false;
   }
-  isBought(): boolean {
+  getIsBought(): boolean {
     return false;
   }
 }
 
 export class UnlockedState implements ComicChapterState {
-  access(context: ComicChapterContext): void {
+  context: ComicChapterContext;
+
+  setContext(context: ComicChapterContext) {
+    this.context = context;
+  }
+
+  access(): void {
     console.log("Đã mua, Chuyển sang trang đọc");
-    context.goToChapterPage();
+    this.context.goToChapterPage();
   }
   buy(): void {
     console.log("Đã mua rồi nhé");
   }
-  isFree(): boolean {
+  getIsFree(): boolean {
     return false;
   }
-  isBought(): boolean {
+  getIsBought(): boolean {
     return true;
   }
 }

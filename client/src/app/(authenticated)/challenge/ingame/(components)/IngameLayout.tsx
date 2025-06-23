@@ -12,15 +12,17 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useDisclosure } from "@nextui-org/modal";
 import { ReceivedCoinDialog } from "@/components/receivedCoinDialog";
-import { QuestionCollection } from "./ConcreateCollection";
+import { ConcreateQuestionCollection } from "./ConcreateCollection";
 import { Question } from "./question";
-import { QuestionIterator } from "./ConcreateIterator";
+import { ConcreateQuestionIterator } from "./ConcreateIterator";
 
 const IngameLayout = ({ session }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number | null>
   >({});
-  const [iterator, setIterator] = useState<QuestionIterator | null>(null);
+  const [iterator, setIterator] = useState<ConcreateQuestionIterator | null>(
+    null
+  );
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
   const [score, setScore] = useState<number | null>(null);
@@ -62,7 +64,7 @@ const IngameLayout = ({ session }) => {
 
   useEffect(() => {
     if (challengeInformation?.questionCollection?.length) {
-      const qc = new QuestionCollection();
+      const qc = new ConcreateQuestionCollection();
       challengeInformation.questionCollection.forEach((q) => qc.addQuestion(q));
       const it = qc.createIterator();
       setIterator(it);
@@ -86,7 +88,7 @@ const IngameLayout = ({ session }) => {
 
   const handleNext = () => {
     if (!iterator || !currentQuestion) return;
-    if (iterator?.getCurrentIndex() < questionList.length - 1) {
+    if (iterator?.hasNext()) {
       setCurrentQuestion(iterator?.next());
     } else {
       calculateScore();
@@ -102,7 +104,7 @@ const IngameLayout = ({ session }) => {
         date: new Date(),
         remainingTime: timeLeft,
       };
-      await uploadChallengesPoint(data);
+      // await uploadChallengesPoint(data);
       event.returnValue = "";
     };
 
@@ -153,7 +155,7 @@ const IngameLayout = ({ session }) => {
         )} skycoin.`
       );
       onOpen();
-      await uploadChallengesPoint(data);
+      // await uploadChallengesPoint(data);
 
       setTimeout(() => {
         router.push("/challenge/dashboard");

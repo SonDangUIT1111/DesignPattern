@@ -150,19 +150,16 @@ const ChapterComponent = ({ comicId, session }) => {
     const result = await getChapter(comicId);
     if (userId) {
       const boughtList = await getPaymentHistories(userId);
-      if (!boughtList.includes(chapterId)) {
+      if (
+        !boughtList.includes(chapterId) &&
+        result[0]?.detailChapterList?.find((i) => i?._id === chapterId)
+          ?.unlockPrice !== 0
+      ) {
         setInvalidAcc(true);
         setModalMode("invalidAccess");
         onOpen();
       }
       setBoughtChapterList(boughtList);
-    } else if (
-      result[0]?.detailChapterList?.find((i) => i?._id === chapterId)
-        ?.unlockPrice !== 0
-    ) {
-      setInvalidAcc(true);
-      setModalMode("invalidAccess");
-      onOpen();
     }
     setChapterList(result[0]?.detailChapterList);
     setCurrentChapterDetail(

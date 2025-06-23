@@ -5,7 +5,6 @@ import {
   UnlockedState,
 } from "./comic__state";
 
-// Lớp Bóng đèn
 export class ComicChapterContext {
   private state: ComicChapterState;
   goToChapterPage: () => void;
@@ -19,15 +18,16 @@ export class ComicChapterContext {
     buyChapter,
     goToChapterPage,
   }) {
+    this.goToChapterPage = goToChapterPage;
+    this.openPaidDialog = openPaidDialog;
+    this.buyChapter = buyChapter;
     const initState = isFree
       ? new FreeState()
       : isBought
       ? new UnlockedState()
       : new PremiumState();
-    this.state = initState;
-    this.goToChapterPage = goToChapterPage;
-    this.openPaidDialog = openPaidDialog;
-    this.buyChapter = buyChapter;
+    initState.setContext(this);
+    this.setState(initState);
   }
 
   setState(state: ComicChapterState): void {
@@ -35,17 +35,17 @@ export class ComicChapterContext {
   }
 
   access(): void {
-    this.state.access(this);
+    this.state.access();
   }
 
   buy(): void {
-    this.state.buy(this);
+    this.state.buy();
   }
 
   getIsFree(): boolean {
-    return this.state.isFree();
+    return this.state.getIsFree();
   }
   getIsBought(): boolean {
-    return this.state.isBought();
+    return this.state.getIsBought();
   }
 }

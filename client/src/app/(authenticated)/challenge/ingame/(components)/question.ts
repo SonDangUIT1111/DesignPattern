@@ -6,7 +6,7 @@ export type Question = {
   correctAnswerID: string;
 };
 
-export interface QIterator<T> {
+export interface QuestionIterator<T> {
   hasNext(): boolean;
   next(): T;
   goTo(index: number): T | null;
@@ -15,6 +15,6 @@ export interface QIterator<T> {
   getCurrentIndex(): number;
 }
 
-export interface IterableCollection<T> {
-  createIterator(): QIterator<T>;
+export interface IterableQuestionCollection<T> {
+  createIterator(): QuestionIterator<T>;
 }
