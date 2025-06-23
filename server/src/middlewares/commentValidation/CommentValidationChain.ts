@@ -25,7 +25,7 @@ export class CommentValidationChain {
       .setNext(spamDetector)
       .setNext(commentSaver);
 
-    this.chain = contentValidator;
+    this.chain = userValidator;
   }
 
   public async validateAndSaveComment(
